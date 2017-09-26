@@ -1,12 +1,12 @@
 /*
- * qTip2 - Pretty powerful tooltips - v3.0.3
+ * qTip2 - Pretty powerful tooltips - v3.0.3-4-g
  * http://qtip2.com
  *
- * Copyright (c) 2016 
+ * Copyright (c) 2017 
  * Released under the MIT licenses
  * http://jquery.org/license
  *
- * Date: Wed May 11 2016 10:31 GMT+0100+0100
+ * Date: Tue Sep 26 2017 01:45 GMT+0800+0800
  * Plugins: tips modal viewport svg imagemap ie6
  * Styles: core basic css3
  */
@@ -681,10 +681,10 @@ PROTOTYPE._createTitle = function()
 	.insertBefore(elements.content)
 
 	// Button-specific events
-	.delegate('.qtip-close', 'mousedown keydown mouseup keyup mouseout', function(event) {
+	.on('mousedown keydown mouseup keyup mouseout', '.qtip-close', function(event) {
 		$(this).toggleClass('ui-state-active ui-state-focus', event.type.substr(-4) === 'down');
 	})
-	.delegate('.qtip-close', 'mouseover mouseout', function(event){
+	.on('mouseover mouseout', '.qtip-close', function(event){
 		$(this).toggleClass('ui-state-hover', event.type === 'mouseover');
 	});
 
@@ -1061,7 +1061,7 @@ PROTOTYPE.toggle = function(state, event) {
 
 		// Cache mousemove events for positioning purposes (if not already tracking)
 		if(!trackingBound && posOptions.target === 'mouse' && posOptions.adjust.mouse) {
-			$(document).bind('mousemove.'+NAMESPACE, this._storeMouse);
+			$(document).on('mousemove.'+NAMESPACE, this._storeMouse);
 			trackingBound = TRUE;
 		}
 
@@ -1085,7 +1085,7 @@ PROTOTYPE.toggle = function(state, event) {
 
 		// Remove mouse tracking event if not needed (all tracking qTips are hidden)
 		if(trackingBound && !$(SELECTOR+'[tracking="true"]:visible', opts.solo).not(tooltip).length) {
-			$(document).unbind('mousemove.'+NAMESPACE);
+			$(document).off('mousemove.'+NAMESPACE);
 			trackingBound = FALSE;
 		}
 
@@ -1384,21 +1384,22 @@ PROTOTYPE._storeMouse = function(event) {
 PROTOTYPE._bind = function(targets, events, method, suffix, context) {
 	if(!targets || !method || !events.length) { return; }
 	var ns = '.' + this._id + (suffix ? '-'+suffix : '');
-	$(targets).bind(
+	$(targets).on(
 		(events.split ? events : events.join(ns + ' ')) + ns,
 		$.proxy(method, context || this)
 	);
 	return this;
 };
 PROTOTYPE._unbind = function(targets, suffix) {
-	targets && $(targets).unbind('.' + this._id + (suffix ? '-'+suffix : ''));
+	targets && $(targets).off('.' + this._id + (suffix ? '-'+suffix : ''));
 	return this;
 };
 
 // Global delegation helper
 function delegate(selector, events, method) {
-	$(document.body).delegate(selector,
+	$(document.body).on(
 		(events.split ? events : events.join('.'+NAMESPACE + ' ')) + '.'+NAMESPACE,
+		selector,
 		function() {
 			var api = QTIP.api[ $.attr(this, ATTR_ID) ];
 			api && !api.disabled && method.apply(api, arguments);
@@ -1775,7 +1776,7 @@ function init(elem, id, opts) {
 
 	// Remove title attribute and store it if present
 	if(config.suppress && (title = elem.attr('title'))) {
-		// Final attr call fixes event delegatiom and IE default tooltip showing problem
+		// Final attr call fixes event delegation and IE default tooltip showing problem
 		elem.removeAttr('title').attr(oldtitle, title).attr('title', '');
 	}
 
@@ -1931,7 +1932,7 @@ if(!$.ui) {
 	};
 }
 ;// qTip version
-QTIP.version = '3.0.3';
+QTIP.version = '3.0.3-4-g';
 
 // Base ID for all qTips
 QTIP.nextid = 0;
@@ -2729,17 +2730,17 @@ OVERLAY = function()
 			.hide();
 
 			// Make sure we can't focus anything outside the tooltip
-			$(document.body).bind('focusin'+MODALSELECTOR, stealFocus);
+			$(document.body).on('focusin'+MODALSELECTOR, stealFocus);
 
 			// Apply keyboard "Escape key" close handler
-			$(document).bind('keydown'+MODALSELECTOR, function(event) {
+			$(document).on('keydown'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.escape && event.keyCode === 27) {
 					current.hide(event);
 				}
 			});
 
 			// Apply click handler for blur option
-			elem.bind('click'+MODALSELECTOR, function(event) {
+			elem.on('click'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.blur) {
 					current.hide(event);
 				}
@@ -3007,7 +3008,7 @@ $.extend(TRUE, QTIP.defaults, {
 		return adjusted;
 	}
 
-	// Cach container details
+	// Cache container details
 	containerOffset = container.offset() || adjusted;
 	containerStatic = container.css('position') === 'static';
 
@@ -3016,7 +3017,7 @@ $.extend(TRUE, QTIP.defaults, {
 	viewportWidth = viewport[0] === window ? viewport.width() : viewport.outerWidth(FALSE);
 	viewportHeight = viewport[0] === window ? viewport.height() : viewport.outerHeight(FALSE);
 	viewportScroll = { left: fixed ? 0 : viewport.scrollLeft(), top: fixed ? 0 : viewport.scrollTop() };
-	viewportOffset = viewport.offset() || adjusted;
+	viewportOffset = viewport[0] !== window && viewport.offset() || adjusted;
 
 	// Generic calculation method
 	function calculate(side, otherSide, type, adjustment, side1, side2, lengthName, targetLength, elemLength) {
